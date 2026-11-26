@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planning CIC</title>
+<script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+<style>
+:root{--bg:#fff;--ink:#121821;--mut:#5b6574;--line:#d9dee6;--off:#e4e7ec;--we:#fff4d6;--blue:#2c5aa0;--teal:#3f8a80;--red:#d6312b;--amber:#d98a00;--panel:#f3f6fa;--cg:#d8e5fb;--cgi:#173e7a;--md:#fbdde3;--mdi:#8a1c34;--fo:#e8defa;--foi:#4b2a86;--pr:#d5f0e3;--pri:#0f5e3d;--am:#e9eaec;--ami:#3d4450}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{background:var(--blue);color:#fff;padding:10px 14px 0}
+.hrow{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between}
+.top h1{font-size:20px;margin:0;font-weight:800;letter-spacing:-.01em}
+.camp{display:flex;align-items:center;gap:6px;font-weight:600}
+.camp button{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:6px;min-width:34px;min-height:34px;font-size:16px;cursor:pointer}
+.kpis{display:flex;flex-wrap:wrap;gap:6px}
+.kpi{background:rgba(255,255,255,.13);border-radius:7px;padding:4px 10px;font-size:12px;white-space:nowrap}
+.kpi b{font-size:16px;margin-right:4px}
+.kpi.bad b{color:#ffd0cc}
+.tabs{display:flex;gap:2px;margin-top:8px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;color:#fff;font:600 14px inherit;font-family:inherit;padding:9px 12px;border-radius:7px 7px 0 0;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--bg);color:var(--ink)}
+.bar{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line)}
+.pills{display:flex;gap:4px;overflow-x:auto}
+#monPills{flex:1 1 300px}
+.pills button{flex:none}
+.pills button,.btn{border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13px inherit;font-family:inherit;padding:6px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;min-height:34px}
+.pills button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.warn{background:var(--amber);color:#fff;border-color:var(--amber)}
+.btn:disabled{opacity:.5;cursor:default}
+main{padding:10px 14px 30px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table.g{border-collapse:separate;border-spacing:0;font-size:12px;width:max-content}
+.g th,.g td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;text-align:center;height:28px;width:33px;min-width:33px}
+.g th.nm{position:sticky;left:0;z-index:2;background:var(--bg);text-align:left;padding:0 8px;width:110px;min-width:110px;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g thead th{background:var(--panel);font-weight:600}
+.g .dh{line-height:1.05;font-size:10.5px;color:var(--mut)}
+.g .dh b{display:block;font-size:12.5px;color:var(--ink)}
+.g .we{background:var(--we)}
+.g thead th.we{background:var(--we)}
+.g .fe b{color:#fff;background:var(--red);border-radius:4px;margin:0 3px}
+.g tr.zr th,.g tr.zr td{height:12px;font-size:10px;line-height:11px}
+.g tr.zr td.on.zA{background:#e07a2e}
+.g tr.zr td.on.zB{background:#3f9e5a}
+.g tr.zr td.on.zC{background:#7b5cc4}
+.g tr.gh th{background:var(--panel);text-align:left;padding:5px 8px;font-size:13px;position:sticky;left:0}
+.g tr.gh span{color:var(--mut);font-weight:400;margin-left:8px}
+.g td.c{cursor:pointer;position:relative}
+.g td.c:hover{outline:2px solid var(--blue);outline-offset:-2px}
+.g td.ro{cursor:default}
+.g td.ro:hover{outline:0}
+.g td.off{background:repeating-linear-gradient(135deg,var(--off) 0 4px,transparent 4px 7px)}
+.g td.off.we{background:repeating-linear-gradient(135deg,var(--off) 0 4px,var(--we) 4px 7px)}
+.g td.na{background:#c9ced6}
+.chip{display:inline-block;border-radius:4px;padding:1px 2px;font-weight:700;font-size:10px;line-height:1.3;max-width:31px;overflow:hidden;white-space:nowrap}
+.k-cg{background:var(--cg);color:var(--cgi)}.k-md{background:var(--md);color:var(--mdi)}.k-fo{background:var(--fo);color:var(--foi)}.k-pr{background:var(--pr);color:var(--pri)}.k-am{background:var(--am);color:var(--ami)}
+.hh{display:block;font-size:9px;color:var(--mut);line-height:1}
+.dot{position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.okm{position:absolute;bottom:0;right:2px;font-size:9px;color:var(--teal);font-weight:800}
+.pend{position:absolute;bottom:2px;right:2px;width:5px;height:5px;border-radius:50%;border:1.5px solid var(--red)}
+.bad-off{box-shadow:inset 0 0 0 2px var(--amber)}
+.g tr.cnt th{font-weight:400;color:var(--mut);font-size:12px}
+.g tr.cnt td{font-weight:800}
+.g tr.cnt td.ok{color:var(--teal)}.g tr.cnt td.lim{color:var(--amber)}.g tr.cnt td.ko{background:var(--red);color:#fff}
+.g tr.res th{color:var(--mut)}
+.lay{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media(min-width:1150px){.lay.sup{grid-template-columns:minmax(0,1fr) 260px}}
+.side{background:var(--panel);border-radius:8px;padding:12px 14px;align-self:start}
+.side h3{margin:0 0 6px;font-size:15px}
+.side ul{margin:0 0 12px;padding-left:18px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--mut);align-items:center}
+.legend i{display:inline-block;width:16px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.note{font-size:12.5px;color:var(--mut)}
+.year{display:grid;grid-template-columns:90px minmax(0,1fr);gap:6px 10px;align-items:center}
+.strip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);height:30px;border-radius:4px;overflow:hidden;background:var(--panel)}
+.strip i.w{background:#9cc8c1}.strip i.l{background:var(--amber)}.strip i.k{background:var(--red)}.strip i.f{background:var(--off)}
+.strip i{border-right:1px solid #fff}
+.mlab{display:grid;font-size:11px}
+.mlab button{border:0;border-left:1px solid var(--line);background:none;color:var(--mut);font:600 11px inherit;font-family:inherit;cursor:pointer;text-align:left;padding:3px 0 3px 4px}
+.ov{position:fixed;inset:0;background:rgba(10,15,25,.45);display:none;align-items:flex-start;justify-content:center;padding:4vh 10px;z-index:20;overflow:auto}
+.ov.on{display:flex}
+.dlg{background:var(--bg);border-radius:12px;max-width:560px;width:100%;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.dlg h2{margin:0;font-size:19px}
+.dlg .sub{color:var(--mut);margin:2px 0 10px}
+.cg h4{margin:8px 0 4px;font-size:12px;color:var(--mut);font-weight:600}
+.cg div{display:flex;flex-wrap:wrap;gap:4px}
+.cb{border:2px solid transparent;border-radius:6px;padding:4px 7px;font:700 12.5px inherit;font-family:inherit;cursor:pointer;min-height:32px}
+.cb[aria-pressed=true]{border-color:var(--ink)}
+.fld{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.fld label{font-size:12.5px;color:var(--mut);display:flex;flex-direction:column;gap:3px;flex:1 1 140px}
+.fld input,.fld select{font:15px inherit;font-family:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.chk{display:flex;gap:8px;align-items:center;margin-top:10px}
+.acts{display:flex;gap:6px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.warnbox{background:#fff3db;border:1px solid #f0c674;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:13px}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:8px;z-index:30;display:none;max-width:90vw}
+.toast.on{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h3{margin:0;font-size:14px}
+.card .big{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:4px 0}
+.card .big.neg{color:var(--red)}
+.card table{width:100%;font-size:12.5px;border-collapse:collapse}
+.card td{padding:2px 0;border-top:1px solid var(--panel)}
+.card td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.al{background:#fdecea;border-left:4px solid var(--red);padding:8px 12px;border-radius:6px;margin:8px 0}
+.hidden{display:none!important}
+.adm section{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.adm h3{margin:0 0 6px;font-size:15px}
+.adm li{margin:2px 0}
+#printArea{display:none}
+@media print{
+ @page{size:A4 landscape;margin:8mm}
+ body>*:not(#printArea){display:none!important}
+ #printArea{display:block}
+ #printArea h2{font-size:14px;margin:6px 0}
+ #printArea .blk{break-inside:avoid;margin-bottom:8px}
+ .g th,.g td{height:16px;width:22px;min-width:22px;font-size:8px}
+ .g th.nm{width:70px;min-width:70px;font-size:9px;position:static}
+ .chip{font-size:7px;max-width:21px}
+ .hh,.dot,.okm,.pend{display:none}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="hrow">
+    <h1>Planning CIC</h1>
+    <div class="camp"><button id="cPrev" aria-label="Campagne précédente">‹</button><span id="cLab"></span><button id="cNext" aria-label="Campagne suivante">›</button></div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+  <nav class="tabs">
+    <button id="t-saisie" aria-selected="true">Saisie par groupe</button>
+    <button id="t-sup" aria-selected="false">Vue superviseur</button>
+    <button id="t-an" aria-selected="false">Vue annuelle</button>
+    <button id="t-cpt" aria-selected="false">Mon compteur</button>
+    <button id="t-adm" aria-selected="false">Administration</button>
+  </nav>
+</header>
+<div class="bar" id="bar">
+  <div class="pills" id="grpPills"></div>
+  <div class="pills" id="monPills"></div>
+  <select id="printSel" class="btn" aria-label="Que faut-il imprimer ?">
+    <option value="m">Imprimer le mois affiché</option>
+    <option value="yg">Imprimer l'année du groupe</option>
+    <option value="ya">Imprimer l'année du service</option>
+  </select>
+  <button class="btn" id="printBtn">Imprimer</button>
+  <button class="btn" id="refresh">Actualiser</button>
+</div>
+<main><div id="view"><p class="note">Chargement…</p></div>
+  <div class="legend" id="legend">
+    <span><i style="background:repeating-linear-gradient(135deg,var(--off) 0 4px,transparent 4px 7px);border:1px solid var(--line)"></i>Repos du cycle</span>
+    <span><i style="background:var(--we);border:1px solid var(--line)"></i>Samedi, dimanche, férié</span>
+    <span><i style="background:var(--red)"></i>Numéro d'un jour férié</span>
+    <span><i style="background:#e07a2e"></i>Zone A</span><span><i style="background:#3f9e5a"></i>Zone B</span><span><i style="background:#7b5cc4"></i>Zone C</span>
+    <span><i class="k-cg"></i>Congés, repos</span><span><i class="k-md"></i>Maladie, famille</span><span><i class="k-fo"></i>Stage, convocation</span><span><i class="k-pr"></i>Présence</span><span><i class="k-am"></i>Temps partiel</span>
+    <span><b style="color:var(--teal)">✓</b> confirmé dans le logiciel officiel</span><span><i style="background:#c9ced6"></i>Hors affectation</span>
+  </div>
+</main>
+<div id="printArea"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="ov" id="ov"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dT">
+  <h2 id="dT"></h2><p class="sub" id="dS"></p>
+  <div id="dCodes"></div>
+  <div class="fld">
+    <label id="lSens" class="hidden">Heures supplémentaires<select id="fSens"><option value="Acquis">Acquises : je travaille, je note le total acquis</option><option value="Consommé">Consommées : je pose des heures</option></select></label>
+    <label id="lH" class="hidden">Durée (vide = vacation entière)<input id="fH" type="text" inputmode="numeric" placeholder="ex. 4:00" maxlength="6"></label>
+    <label id="lDA" class="hidden">Heures prises sur<select id="fDA"><option value="HS">HS</option><option value="RTT">RTT</option><option value="RPS">RPS</option><option value="CF">CF</option></select></label>
+    <label id="lG" class="hidden">Groupe renforcé<select id="fG"></select></label>
+    <label id="lN" class="hidden">Nom du réserviste<input id="fN" type="text" maxlength="24"></label>
+    <label id="lFin">Jusqu'au (inclus, jours travaillés seulement)<input id="fFin" type="date"></label>
+    <label style="flex-basis:100%">Commentaire (tir, visite médicale…)<input id="fC" type="text" maxlength="80"></label>
+  </div>
+  <label class="chk" id="lOk"><input type="checkbox" id="fOk">Confirmé dans le logiciel officiel</label>
+  <div id="dWarn" class="warnbox hidden"></div>
+  <div class="acts"><button class="btn" id="dDel">Effacer</button><button class="btn" id="dX">Fermer</button><button class="btn pri" id="dSave">Enregistrer</button></div>
+</div></div>
+
+<script>
+{
+/* ---------- Constantes ---------- */
+const DAY=864e5, PAT='11000110011100';
+const MN=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const AB=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const WD=['D','L','M','M','J','V','S'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const dow=t=>new Date(t).getUTCDay();
+const sec2iso=s=>s?iso(s*1000):null;
+const iso2sec=d=>Date.parse(d)/1000;
+const h2s=h=>{const neg=h<0;const m=Math.round(Math.abs(h)*60);return (neg?'−':'')+Math.floor(m/60)+'h'+String(m%60).padStart(2,'0')};
+const s2h=s=>{s=String(s||'').trim().replace('h',':');if(!s)return 0;const p=s.split(':');const v=(+p[0]||0)+((+p[1]||0)/60);return isFinite(v)?v:0};
+const fmtD=d=>{const t=Date.parse(d);return ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'][dow(t)]+' '+new Date(t).getUTCDate()+' '+MN[new Date(t).getUTCMonth()]+' '+new Date(t).getUTCFullYear()};
+const toast=(m,ms=4000)=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),ms)};
+
+/* ---------- Schéma Grist (utilisé par l'installation) ---------- */
+const F_GROUPE_AGENT="import datetime\nt = TODAY()\naffs = sorted(Affectations.lookupRecords(Agent=$id), key=lambda a: a.Debut or datetime.date(1900, 1, 1))\ng = \"\"\nfor a in affs:\n  if a.Debut and a.Debut <= t and (not a.Fin or t <= a.Fin):\n    g = a.Groupe.Code\nif not g:\n  futur = [a for a in affs if a.Debut and a.Debut > t]\n  if futur:\n    g = futur[0].Groupe.Code\nreturn g\n";
+const F_CALC="import json, datetime\ny = $Annee\nif not $Agent or not y:\n  return \"\"\nD0, D1 = datetime.date(y, 1, 1), datetime.date(y, 12, 31)\ntoday = TODAY()\nPAT = \"11000110011100\"\nhebdo = ($Regime == \"Hebdo\")\nDMJ = (7 + 53 / 60.0) if hebdo else (12 + 8 / 60.0)\nEPS = 1e-6\nC = dict((c.Code, c) for c in Codes.lookupRecords())\nG = dict((g.Code, g) for g in Groupes.lookupRecords())\nfer = set(f.Date for f in Feries.lookupRecords() if f.Date)\naffs = sorted(Affectations.lookupRecords(Agent=$Agent.id), key=lambda a: a.Debut or datetime.date(1900, 1, 1))\nS = {}\nfor s in Saisies.lookupRecords(Agent=$Agent.id):\n  if s.Date and D0 <= s.Date <= D1:\n    S[s.Date] = s\n\ndef grp(d):\n  g = None\n  for a in affs:\n    if a.Debut and a.Debut <= d and (not a.Fin or d <= a.Fin):\n      g = a.Groupe\n  return g\n\ndef works(g, d):\n  if not g:\n    return False\n  if g.Type == \"Hebdo\":\n    return d.weekday() < 5 and d not in fer\n  if not g.Ancre:\n    return False\n  return PAT[(d - g.Ancre).days % 14] == \"1\"\n\ndef hm(t, dflt):\n  try:\n    h, m = str(t).split(\":\")\n    return int(h) + int(m) / 60.0\n  except Exception:\n    return dflt\n\ndef rps(day, g):\n  # 0,4 par heure travaill\u00e9e le dimanche ; 0,1 par heure travaill\u00e9e entre 21 h et 6 h (non cumulables)\n  if not g or g.Type == \"Hebdo\":\n    return 0.0\n  start = datetime.datetime.combine(day, datetime.time()) + datetime.timedelta(hours=hm(g.Prise_service, 7.0))\n  end = start + datetime.timedelta(hours=12 + 8 / 60.0)\n  pts = set([start, end])\n  d = day\n  while datetime.datetime.combine(d, datetime.time()) <= end:\n    for h in (0, 6, 21):\n      p = datetime.datetime.combine(d, datetime.time(h))\n      if start < p < end:\n        pts.add(p)\n    d += datetime.timedelta(days=1)\n  pts = sorted(pts)\n  tot = 0.0\n  for a, b in zip(pts, pts[1:]):\n    mid = a + (b - a) / 2\n    c = 0.4 if mid.weekday() == 6 else (0.1 if (mid.hour >= 21 or mid.hour < 6) else 0.0)\n    tot += c * (b - a).total_seconds() / 3600.0\n  return tot\n\ndef absent(s):\n  c = C.get(s.Code)\n  if not c:\n    return False\n  if s.Code == \"HS\" and s.Sens == \"Acquis\":\n    return False\n  if c.Presence == \"Absent\":\n    return True\n  if c.Presence == \"Partiel\":\n    return (s.Heures or DMJ) >= DMJ - EPS\n  return False\n\nK = [\"CA\", \"HP\", \"RTT\", \"CF\", \"RPS\", \"HS\", \"CET\", \"NT\"]\npris = dict((k, 0.0) for k in K)\navenir = dict((k, 0.0) for k in K)\ncredit_passe = {\"RPS\": 0.0, \"HS\": 0.0}\ncredit_futur = {\"RPS\": 0.0, \"HS\": 0.0}\nca_hors_periode = 0\nca_avant_mai = 0\ncmo = []\nfor d in sorted(S):\n  s = S[d]\n  c = C.get(s.Code)\n  if not c:\n    continue\n  futur = d > today\n  if s.Code == \"HS\":\n    h = s.Heures or DMJ\n    if s.Sens == \"Acquis\":\n      (credit_futur if futur else credit_passe)[\"HS\"] += (s.Heures or 0)\n    else:\n      (avenir if futur else pris)[\"HS\"] += h\n    continue\n  if s.Code in (\"D-A\", \"P-R\"):\n    k = s.Compteur_DA or \"HS\"\n    if k in pris:\n      (avenir if futur else pris)[k] += (s.Heures or 0)\n    continue\n  if s.Code == \"CMO\":\n    cmo.append(d)\n  k = c.Compteur\n  if not k or k not in pris:\n    continue\n  amt = 1.0 if c.Unite == \"Vacation\" else (s.Heures or DMJ)\n  (avenir if futur else pris)[k] += amt\n  if s.Code == \"CA\":\n    if not (datetime.date(y, 5, 1) <= d <= datetime.date(y, 10, 31)):\n      ca_hors_periode += 1\n    if d < datetime.date(y, 5, 1):\n      ca_avant_mai += 1\n\n# RPS acquis sur les vacations r\u00e9ellement tenues (cycle uniquement)\nif not hebdo:\n  d = D0\n  while d <= D1:\n    s = S.get(d)\n    g = grp(d)\n    v = 0.0\n    if s and s.Code == \"RFR\" and not works(g, d):\n      v = rps(d, G.get(s.Groupe_renfort) or g)\n    elif works(g, d) and not (s and absent(s)):\n      v = rps(d, g)\n    if v:\n      (credit_futur if d > today else credit_passe)[\"RPS\"] += v\n    d += datetime.timedelta(days=1)\n\n# Bar\u00e8me selon r\u00e9gime et quotit\u00e9\nq = $Quotite or 100\nb = Bareme.lookupOne(Regime=$Regime, Quotite=q)\nf = 1.0\nif not (b and b.id):\n  b = Bareme.lookupOne(Regime=$Regime, Quotite=100)\n  f = q / 100.0\nif not (b and b.id):\n  b = None\n\n# R\u00e9duction du cr\u00e9dit f\u00e9ri\u00e9 : 1/24 par arr\u00eat maladie ordinaire de 15 jours cons\u00e9cutifs ou plus\nreduc = 0\nif cmo:\n  first = prev = cmo[0]\n  for d in cmo[1:] + [None]:\n    if d is not None and (d - prev).days <= 4:\n      prev = d\n      continue\n    if (prev - first).days + 1 >= 15:\n      reduc += 1\n    if d is not None:\n      first = prev = d\ncf_base = (b.CF * f) if b else 0.0\nnb_hp = 2 if ca_hors_periode >= 8 else (1 if ca_hors_periode >= 5 else 0)\ndroit = {\n  \"CA\": ((b.CA * f) if b else 0) + ($Report_CA or 0),\n  \"HP\": nb_hp,\n  \"RTT\": ((b.ARTT * f) if b else 0) + ($Report_RTT or 0),\n  \"CF\": cf_base - reduc * cf_base / 24.0 + ($Report_CF or 0),\n  \"RPS\": ($Report_RPS or 0),\n  \"HS\": ($Report_HS or 0),\n  \"CET\": ($Report_CET or 0),\n  \"NT\": ((b.NT * f) if b else 0),\n}\nLAB = {\"CA\": \"Cong\u00e9s annuels\", \"HP\": \"Jours de fractionnement\", \"RTT\": \"ARTT\", \"CF\": \"Cr\u00e9dit f\u00e9ri\u00e9\",\n       \"RPS\": \"Repos p\u00e9nibilit\u00e9 sp\u00e9cifique\", \"HS\": \"Heures suppl\u00e9mentaires\", \"CET\": \"CET\", \"NT\": \"Jours non travaill\u00e9s (temps partiel)\"}\nUNIT = {\"CA\": \"j\", \"HP\": \"j\", \"RTT\": \"h\", \"CF\": \"h\", \"RPS\": \"h\", \"HS\": \"h\", \"CET\": \"j\", \"NT\": \"j\"}\n\ndef fmt(v, u):\n  if u == \"j\":\n    return (\"%g\" % round(v, 1)) + \" j\"\n  sg = \"-\" if v < -EPS else \"\"\n  m = int(round(abs(v) * 60))\n  return \"%s%dh%02d\" % (sg, m // 60, m % 60)\n\nrows = []\nal = []\nfor k in K:\n  acq_passe = credit_passe.get(k, 0.0)\n  acq_futur = credit_futur.get(k, 0.0)\n  sd = droit[k] + acq_passe - pris[k]\n  sp = droit[k] + acq_passe + acq_futur - pris[k] - avenir[k]\n  if k == \"NT\" and droit[k] == 0 and pris[k] == 0 and avenir[k] == 0:\n    continue\n  rows.append({\"k\": k, \"lib\": LAB[k], \"u\": UNIT[k], \"droit\": droit[k], \"acquis\": acq_passe, \"a_acquerir\": acq_futur,\n               \"pris\": pris[k], \"avenir\": avenir[k], \"solde\": sd, \"projete\": sp})\n  if sp < -EPS and k != \"RTT\":\n    al.append(\"%s : solde projet\u00e9 au 31/12 n\u00e9gatif (%s)\" % (LAB[k], fmt(sp, UNIT[k])))\nif y == today.year and today.month >= 10:\n  cf = [r for r in rows if r[\"k\"] == \"CF\"]\n  if cf and cf[0][\"projete\"] > EPS:\n    al.append(\"Cr\u00e9dit f\u00e9ri\u00e9 : %s pas encore pos\u00e9es, non reportables apr\u00e8s le 31/12\" % fmt(cf[0][\"projete\"], \"h\"))\n  nt = [r for r in rows if r[\"k\"] == \"NT\"]\n  if nt and nt[0][\"projete\"] > EPS:\n    al.append(\"Temps partiel : %s non travaill\u00e9(s) restant \u00e0 placer\" % fmt(nt[0][\"projete\"], \"j\"))\nif ($Report_CA or 0) > 0 and ca_avant_mai < ($Report_CA or 0) and (y > today.year or (y == today.year and today < datetime.date(y, 5, 1))):\n  al.append(\"CA report\u00e9s : %s \u00e0 poser avant le 1er mai\" % fmt(($Report_CA or 0) - ca_avant_mai, \"j\"))\nif reduc:\n  al.append(\"Cr\u00e9dit f\u00e9ri\u00e9 r\u00e9duit de %d/24 (arr\u00eat maladie de 15 jours ou plus)\" % reduc)\nrtt = [r for r in rows if r[\"k\"] == \"RTT\"][0]\nreturn json.dumps({\"annee\": y, \"regime\": $Regime, \"dmj\": DMJ, \"rows\": rows, \"alertes\": al,\n                   \"cet_equiv_j\": max(rtt[\"projete\"], 0) / (8 + 21 / 60.0),\n                   \"ca_hors_periode\": ca_hors_periode, \"reduc_cf\": reduc})\n";
+const solde=k=>`import json\nd = json.loads($Calc) if $Calc else {}\nfor r in d.get("rows", []):\n  if r["k"] == "${k}":\n    return r["projete"]\nreturn None`;
+const ch=l=>JSON.stringify({choices:l});
+const SCHEMA=[
+ ['Groupes',[['Code','Text'],['Nom','Text'],['Type','Choice',ch(['Cycle','Hebdo'])],['Ancre','Date'],['Prise_service','Text'],['Ordre','Int'],['Minimum','Int']]],
+ ['Agents',[['Trigramme','Text'],['Nom','Text'],['Email','Text'],['Statut','Choice',ch(['Agent','Réserviste'])],['Quotite','Int'],['Ordre','Int'],['Groupe','Text',null,F_GROUPE_AGENT]]],
+ ['Codes',[['Code','Text'],['Libelle','Text'],['Famille','Choice',ch(['cg','md','fo','pr','am'])],['Unite','Choice',ch(['Vacation','Heures'])],['Compteur','Text'],['Presence','Choice',ch(['Absent','Partiel','Présent'])],['Actif','Bool'],['Ordre','Int']]],
+ ['Feries',[['Date','Date'],['Libelle','Text']]],
+ ['Vacances',[['Zone','Choice',ch(['A','B','C'])],['Debut','Date'],['Fin','Date'],['Libelle','Text']]],
+ ['Bareme',[['Regime','Choice',ch(['Cycle','Hebdo'])],['Quotite','Int'],['CA','Numeric'],['ARTT','Numeric'],['CF','Numeric'],['NT','Numeric']]],
+ ['Affectations',[['Agent','Ref:Agents'],['Groupe','Ref:Groupes'],['Debut','Date'],['Fin','Date']]],
+ ['Saisies',[['Agent','Ref:Agents'],['Date','Date'],['Code','Text'],['Heures','Numeric'],['Sens','Choice',ch(['Acquis','Consommé'])],['Compteur_DA','Choice',ch(['HS','RTT','RPS','CF'])],['Groupe_renfort','Text'],['Nom_reserviste','Text'],['Commentaire','Text'],['Confirme','Bool'],['Groupe','Text'],['Annee','Int',null,'$Date.year if $Date else None']]],
+ ['Compteurs',[['Agent','Ref:Agents'],['Annee','Int'],['Email','Text',null,'$Agent.Email'],
+   ['Regime','Text',null,'g = Groupes.lookupOne(Code=$Agent.Groupe)\nreturn "Hebdo" if g and g.Type == "Hebdo" else "Cycle"'],
+   ['Quotite','Int',null,'$Agent.Quotite or 100'],
+   ['Report_CA','Numeric'],['Report_RTT','Numeric'],['Report_CF','Numeric'],['Report_RPS','Numeric'],['Report_HS','Numeric'],['Report_CET','Numeric'],
+   ['Calc','Text',null,F_CALC],
+   ['Solde_CA','Numeric',null,solde('CA')],['Solde_RTT','Numeric',null,solde('RTT')],['Solde_CF','Numeric',null,solde('CF')],['Solde_RPS','Numeric',null,solde('RPS')],['Solde_HS','Numeric',null,solde('HS')],
+   ['Alertes','Text',null,'import json\nreturn "\\n".join(json.loads($Calc).get("alertes", [])) if $Calc else ""']]]
+];
+const H=(h,m)=>h+m/60;
+const SEED={
+ Groupes:[['CH','Chef et adjoint','Hebdo',null,'08:00',1,0],['J1','Jour 1','Cycle','2027-03-17','07:00',2,2],['N1','Nuit 1','Cycle','2027-03-17','19:00',3,2],['J2','Jour 2','Cycle','2027-03-24','07:00',4,2],['N2','Nuit 2','Cycle','2027-03-24','19:00',5,2]],
+ Codes:[['CA','Congés annuels','cg','Vacation','CA','Absent'],['HP','Fractionnement (CA hors période)','cg','Vacation','HP','Absent'],['RTT','ARTT','cg','Heures','RTT','Partiel'],['CF','Crédit férié','cg','Heures','CF','Partiel'],['RPS','Repos pénibilité spécifique','cg','Heures','RPS','Partiel'],['HS','Heures supplémentaires','pr','Heures','HS','Partiel'],['CET','Compte épargne-temps','cg','Vacation','CET','Absent'],['REX','Repos exceptionnel','cg','Vacation','','Absent'],
+   ['CMO','Maladie ordinaire','md','Vacation','','Absent'],['BS','Blessure en service et séquelle','md','Vacation','','Absent'],['MAT','Maternité, paternité','md','Vacation','','Absent'],['GEM','Garde enfant malade','md','Vacation','','Absent'],['ASA','Autorisation spéciale d\'absence','md','Vacation','','Absent'],
+   ['STG','Stage, formation','fo','Heures','','Partiel'],['CNV','Convocation (tir, visite…)','fo','Heures','','Partiel'],
+   ['D-A','Départ anticipé','pr','Heures','','Présent'],['P-R','Prise retardée','pr','Heures','','Présent'],['RFR','Renfort sur un autre groupe','pr','Vacation','','Présent'],['RES','Réserviste présent','pr','Vacation','','Présent'],
+   ['ABS','Non travaillé (temps partiel)','am','Vacation','NT','Absent'],['AME','Aménagé','am','Vacation','','Présent']].map((r,i)=>[...r,true,i+1]),
+ Bareme:[['Cycle',100,18,H(188,9),H(109,12),0],['Cycle',90,16,H(169,20),H(98,16),18],['Cycle',80,14,H(150,31),H(87,21),36],['Cycle',70,12,H(131,42),H(76,26),55],['Cycle',60,11,H(112,53),H(65,31),73],['Cycle',50,9,H(94,4),H(54,36),91],['Hebdo',100,25,16*H(7,53),0,0]],
+ Vacances:[['A','2027-04-10','2027-04-25','Printemps'],['A','2027-07-03','2027-09-01','Été'],['A','2027-10-23','2027-11-07','Toussaint'],['A','2027-12-18','2028-01-02','Noël'],['A','2028-02-19','2028-03-05','Hiver'],
+  ['B','2027-04-17','2027-05-02','Printemps'],['B','2027-07-03','2027-09-01','Été'],['B','2027-10-23','2027-11-07','Toussaint'],['B','2027-12-18','2028-01-02','Noël'],['B','2028-02-05','2028-02-20','Hiver'],
+  ['C','2027-04-03','2027-04-18','Printemps'],['C','2027-07-03','2027-09-01','Été'],['C','2027-10-23','2027-11-07','Toussaint'],['C','2027-12-18','2028-01-02','Noël'],['C','2028-02-12','2028-02-27','Hiver'],['C','2027-02-20','2027-03-08','Hiver (fin)']],
+ Agents:[['VKT','CH','Agent'],['POY','CH','Agent'],['AND','J1'],['DMT','J1'],['DAB','J1'],['CHK','J1'],['TLB','N1'],['SBL','N1'],['STK','N1'],['NGY','N1'],['ARN','J2'],['GAU','J2'],['FILL','J2'],['BOU','J2'],['TSR','N2'],['PQR','N2'],['BGT','N2']]
+};
+function feries(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+ const P=Date.UTC(y,mo-1,da),o=n=>iso(P+n*DAY);
+ return [[`${y}-01-01`,'Jour de l\'an'],[o(1),'Lundi de Pâques'],[`${y}-05-01`,'Fête du travail'],[`${y}-05-08`,'Victoire 1945'],[o(39),'Ascension'],[o(50),'Lundi de Pentecôte'],[`${y}-07-14`,'Fête nationale'],[`${y}-08-15`,'Assomption'],[`${y}-11-01`,'Toussaint'],[`${y}-11-11`,'Armistice'],[`${y}-12-25`,'Noël']]}
+
+/* ---------- État ---------- */
+let D=null, admin=false, me=null, tab='saisie', grp='J1', mon=0, camp=null, cptAgent=null;
+const tables={};
+async function fetchT(n){try{const t=await grist.docApi.fetchTable(n);const ids=t.id||[];return ids.map((id,i)=>{const r={id};for(const k in t)r[k]=t[k][i];return r})}catch(e){return null}}
+async function load(){
+ const names=['Groupes','Agents','Codes','Feries','Vacances','Bareme','Affectations','Saisies','Compteurs'];
+ const res=await Promise.all(names.map(fetchT));names.forEach((n,i)=>tables[n]=res[i]);
+ const missing=names.filter((n,i)=>!res[i]);
+ if(missing.includes('Groupes')||missing.includes('Saisies')){D=null;tab='adm';render();return}
+ const G={};tables.Groupes.forEach(g=>{G[g.Code]={...g,anc:g.Ancre?g.Ancre*1000:null}});
+ const A={};tables.Agents.forEach(a=>A[a.id]=a);
+ const C={};tables.Codes.forEach(c=>{if(c.Actif!==false)C[c.Code]=c});
+ const gById={};tables.Groupes.forEach(g=>gById[g.id]=g.Code);
+ const aff=(tables.Affectations||[]).map(f=>({ag:f.Agent,g:gById[f.Groupe],d0:sec2iso(f.Debut)||'1900-01-01',d1:sec2iso(f.Fin)||'2999-12-31'}));
+ const S={};(tables.Saisies||[]).forEach(s=>{const d=sec2iso(s.Date);if(d&&s.Agent)S[s.Agent+'|'+d]={...s,d}});
+ const FER=new Set((tables.Feries||[]).map(f=>sec2iso(f.Date)));
+ const VAC=(tables.Vacances||[]).map(v=>({z:v.Zone,a:sec2iso(v.Debut),b:sec2iso(v.Fin)}));
+ const CPT=(tables.Compteurs||[]).map(c=>{let j=null;try{j=JSON.parse(c.Calc||'null')}catch(e){}return {...c,j}});
+ D={G,A,C,aff,S,FER,VAC,CPT};
+ const vis=new Set(CPT.map(c=>c.Agent));admin=vis.size>1;
+ me=vis.size===1?[...vis][0]:null;
+ if(camp===null){const t=new Date();let y=t.getUTCFullYear();if(t.getUTCMonth()<2||(t.getUTCMonth()===2&&t.getUTCDate()<15))y--;camp=Math.max(2026,y);mon=defMonth()}
+ if(me&&grp==='J1'&&!loaded){const g=groupAt(me,iso(Date.now()));if(g)grp=g}
+ loaded=true;render();
+}
+let loaded=false;
+const groupAt=(ag,d)=>{let g=null;for(const f of D.aff)if(f.ag===ag&&f.d0<=d&&d<=f.d1)g=f.g;return g};
+function worked(gc,t){const g=D.G[gc];if(!g)return false;const d=iso(t);if(g.Type==='Hebdo'){const w=dow(t);return w>0&&w<6&&!D.FER.has(d)}if(!g.anc)return false;const k=Math.round((t-g.anc)/DAY);return PAT[((k%14)+14)%14]==='1'}
+function months(){const out=[];for(let i=0;i<13;i++){const y=camp+Math.floor((2+i)/12),m=(2+i)%12,days=[];const P0=Date.UTC(camp,2,15),P1=Date.UTC(camp+1,2,14);for(let t=Date.UTC(y,m,1);new Date(t).getUTCMonth()===m;t+=DAY)if(t>=P0&&t<=P1)days.push(t);out.push({y,m,lab:AB[m]+(i===0||m===0||i===12?' '+String(y).slice(2):''),full:MN[m]+' '+y,days})}return out}
+function defMonth(){const ms=months();const now=Date.now();const i=ms.findIndex(m=>m.days.some(t=>Math.abs(t-now)<DAY));return i>=0?i:0}
+const dmj=gc=>D.G[gc]&&D.G[gc].Type==='Hebdo'?H(7,53):H(12,8);
+function isPresent(s,gc){if(!s||!s.Code)return true;const c=D.C[s.Code];if(!c)return true;if(s.Code==='RFR')return false;if(s.Code==='HS'&&s.Sens==='Acquis')return true;if(c.Presence==='Présent')return true;if(c.Presence==='Partiel')return (s.Heures||dmj(gc))<dmj(gc)-1e-6;return false}
+function rowsFor(gc,days){const d0=iso(days[0]),d1=iso(days[days.length-1]);const seen=new Map();
+ D.aff.forEach(f=>{if(f.g===gc&&f.d0<=d1&&f.d1>=d0&&D.A[f.ag])seen.set(f.ag,D.A[f.ag])});
+ return [...seen.values()].sort((a,b)=>((a.Statut==='Réserviste')-(b.Statut==='Réserviste'))||((a.Ordre||0)-(b.Ordre||0))||String(a.Trigramme).localeCompare(b.Trigramme))}
+function staff(gc,t){const d=iso(t);let n=0;
+ D.aff.forEach(f=>{if(f.g!==gc||f.d0>d||f.d1<d)return;const a=D.A[f.ag];if(!a)return;const s=D.S[a.id+'|'+d];
+  if(a.Statut==='Réserviste'){if(s&&(s.Code==='RES'||s.Nom_reserviste))n++}else if(isPresent(s,gc))n++});
+ for(const k in D.S){const s=D.S[k];if(s.d===d&&s.Code==='RFR'&&s.Groupe_renfort===gc)n++}return n}
+const cycGroups=()=>Object.values(D.G).filter(g=>g.Type!=='Hebdo').sort((a,b)=>(a.Ordre||0)-(b.Ordre||0));
+const allGroups=()=>Object.values(D.G).sort((a,b)=>(a.Ordre||0)-(b.Ordre||0));
+function stats(ms){let ko=0,pend=0;const al=[];const t0=ms[0].days[0],t1=ms[12].days[ms[12].days.length-1];
+ cycGroups().forEach(g=>{for(let t=t0;t<=t1;t+=DAY)if(worked(g.Code,t)){const n=staff(g.Code,t);if(n<(g.Minimum||2)){ko++;al.push([iso(t),g,n])}}});
+ for(const k in D.S){const s=D.S[k];if(s.d>=iso(t0)&&s.d<=iso(t1)&&s.Code&&D.C[s.Code]&&D.C[s.Code].Presence!=='Présent'&&!(s.Code==='HS'&&s.Sens==='Acquis')&&!s.Confirme)pend++}
+ return{ko,pend,al}}
+
+/* ---------- Rendu de la grille ---------- */
+function head(days,label){const c=t=>{const d=iso(t),w=dow(t);return `${w===0||w===6||D.FER.has(d)?'we':''} ${D.FER.has(d)?'fe':''}`};
+ let h=`<thead><tr><th class="nm">${esc(label)}</th>${days.map(t=>`<th class="dh ${c(t)}">${WD[dow(t)]}<b>${new Date(t).getUTCDate()}</b></th>`).join('')}</tr>`;
+ ['A','B','C'].forEach(z=>h+=`<tr class="zr"><th class="nm">Zone ${z}</th>${days.map(t=>{const d=iso(t);return `<td class="z${z} ${D.VAC.some(v=>v.z===z&&v.a<=d&&d<=v.b)?'on':''}"></td>`}).join('')}</tr>`);return h+'</thead>'}
+function canEdit(a,d){if(admin||!me)return true;return groupAt(me,iso(Date.now()))===groupAt(a.id,d)}
+function cell(a,gc,t,sup){const d=iso(t),w=dow(t),s=D.S[a.id+'|'+d];const inAff=groupAt(a.id,d)===gc;
+ if(!inAff)return '<td class="na" title="Hors affectation"></td>';
+ const off=!worked(gc,t);let cls='c'+(off?' off':'')+(w===0||w===6||D.FER.has(d)?' we':'')+(canEdit(a,d)?'':' ro'),inner='';
+ if(s){if(s.Code&&D.C[s.Code]){const c=D.C[s.Code];let lab=s.Code;if(s.Code==='HS')lab=s.Sens==='Acquis'?'HS+':'HS−';if(s.Code==='RES'&&s.Nom_reserviste)lab=s.Nom_reserviste.slice(0,4);
+   inner=`<span class="chip k-${esc(c.Famille||'cg')}">${esc(lab)}</span>`;if(s.Heures)inner+=`<span class="hh">${h2s(s.Heures)}</span>`;if(s.Code==='RFR')inner+=`<span class="hh">→${esc(s.Groupe_renfort)}</span>`;
+   const needConf=c.Presence!=='Présent'&&!(s.Code==='HS'&&s.Sens==='Acquis');if(needConf)inner+=s.Confirme?'<span class="okm">✓</span>':(sup?'<span class="pend"></span>':'');
+   if(off&&!['RFR','HS','RES'].includes(s.Code))cls+=' bad-off'}
+  else if(s.Nom_reserviste)inner=`<span class="chip k-pr">${esc(s.Nom_reserviste.slice(0,4))}</span>`;if(s.Commentaire)inner+='<span class="dot"></span>'}
+ const tip=s?[s.Code&&D.C[s.Code]&&D.C[s.Code].Libelle,s.Heures&&h2s(s.Heures),s.Nom_reserviste,s.Commentaire].filter(Boolean).join(' · '):'';
+ return `<td class="${cls}" tabindex="0" data-a="${a.id}" data-g="${esc(gc)}" data-d="${d}" title="${esc(tip)}">${inner}</td>`}
+function block(g,days,sup){let h=`<tr class="gh"><th colspan="${days.length+1}">${esc(g.Nom||g.Code)}<span>${g.Type==='Hebdo'?'hebdomadaire':'prise de service '+esc(g.Prise_service||'')}</span></th></tr>`;
+ const rows=rowsFor(g.Code,days);if(!rows.length)h+=`<tr><th class="nm" style="color:var(--mut);font-weight:400">aucun agent</th>${days.map(()=>'<td></td>').join('')}</tr>`;
+ rows.forEach(a=>{h+=`<tr class="${a.Statut==='Réserviste'?'res':''}"><th class="nm" title="${esc(a.Nom||'')}">${a.Statut==='Réserviste'?'Réserviste':esc(a.Trigramme)}</th>${days.map(t=>cell(a,g.Code,t,sup)).join('')}</tr>`});
+ if(g.Type!=='Hebdo')h+=`<tr class="cnt"><th class="nm">Présents</th>${days.map(t=>{if(!worked(g.Code,t))return '<td></td>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<td class="${n<mi?'ko':n===mi?'lim':'ok'}">${n}</td>`}).join('')}</tr>`;return h}
+const grid=(gs,m,sup)=>`<div class="scroll"><table class="g">${head(m.days,m.full)}<tbody>${gs.map(g=>block(g,m.days,sup)).join('')}</tbody></table></div>`;
+
+/* ---------- Mon compteur ---------- */
+function cptView(){const y=new Date().getUTCFullYear();const years=[...new Set(D.CPT.map(c=>c.Annee))].sort();
+ if(!D.CPT.length)return `<p>Aucun compteur visible pour vous. Un administrateur doit créer les compteurs de l'année (onglet Administration), et votre adresse e-mail doit figurer dans le tableau Agents.</p>`;
+ const ags=[...new Set(D.CPT.map(c=>c.Agent))];if(!cptAgent||!ags.includes(cptAgent))cptAgent=me||ags[0];
+ const yr=cptYear&&years.includes(cptYear)?cptYear:(years.includes(y)?y:years[years.length-1]);cptYear=yr;
+ const c=D.CPT.find(x=>x.Agent===cptAgent&&x.Annee===yr);
+ let h=`<div class="bar" style="padding:0 0 10px;border:0">`;
+ if(admin)h+=`<label>Agent <select id="cAg" class="btn">${ags.map(a=>`<option value="${a}" ${a===cptAgent?'selected':''}>${esc(D.A[a]?.Trigramme||a)}</option>`).join('')}</select></label>`;
+ h+=`<label>Année <select id="cYr" class="btn">${years.map(v=>`<option ${v===yr?'selected':''}>${v}</option>`).join('')}</select></label></div>`;
+ if(!c||!c.j)return h+'<p>Compteur non calculé pour cette année.</p>';
+ const j=c.j;h+=`<h2 style="margin:0 0 4px">${esc(D.A[cptAgent]?.Trigramme||'')} · ${yr}</h2><p class="note" style="margin:0 0 10px">Solde projeté au 31/12 : ce qui restera si tout ce qui est posé dans le planning est pris. Régime ${j.regime==='Hebdo'?'hebdomadaire 39h25':'cyclique 12h08'}.</p>`;
+ j.alertes.forEach(a=>h+=`<div class="al">${esc(a)}</div>`);
+ const f=(v,u)=>u==='j'?(Math.round(v*10)/10).toString().replace('.',',')+' j':h2s(v);
+ h+='<div class="cards">'+j.rows.map(r=>{const extra=(r.k==='RPS'||r.k==='HS')?`<tr><td>${r.k==='RPS'?'Acquis à ce jour (nuits, dimanches)':'Acquises à ce jour'}</td><td>${f(r.acquis,r.u)}</td></tr><tr><td>À acquérir d'ici au 31/12</td><td>${f(r.a_acquerir,r.u)}</td></tr>`:'';
+  const cet=r.k==='RTT'?`<tr><td>Équivalent CET (base 8h21)</td><td>${(Math.round(j.cet_equiv_j*10)/10).toString().replace('.',',')} j</td></tr>`:'';
+  return `<div class="card"><h3>${esc(r.lib)}</h3><div class="big ${r.projete<-1e-6?'neg':''}">${f(r.projete,r.u)}</div><table>
+  <tr><td>${r.k==='RPS'||r.k==='HS'?'Report au 1er janvier':r.k==='HP'?'Gagnés (CA hors mai-octobre : '+j.ca_hors_periode+')':'Droit de l\'année'}</td><td>${f(r.droit,r.u)}</td></tr>${extra}
+  <tr><td>Pris à ce jour</td><td>${f(r.pris,r.u)}</td></tr><tr><td>Posé à venir</td><td>${f(r.avenir,r.u)}</td></tr><tr><td>Solde aujourd'hui</td><td>${f(r.solde,r.u)}</td></tr>${cet}</table></div>`}).join('')+'</div>';
+ const R=[['Report_CA','CA reportés (jours)','j'],['Report_RTT','ARTT reportés','h'],['Report_CF','Crédit férié reporté (exceptionnel)','h'],['Report_RPS','Reliquat RPS','h'],['Report_HS','Solde HS au 1er janvier','h'],['Report_CET','Solde CET (jours)','j']];
+ h+=`<h3 style="margin:18px 0 4px">Reports au 1er janvier ${yr}</h3><p class="note" style="margin:0">À recopier depuis le logiciel officiel. Heures au format 12:08.</p><div class="fld">${R.map(([k,l,u])=>`<label>${l}<input data-rep="${k}" data-u="${u}" value="${c[k]?(u==='h'?h2s(c[k]).replace('h',':'):c[k]):''}"></label>`).join('')}</div>
+  <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="saveRep" data-id="${c.id}">Enregistrer les reports</button></div>`;
+ return h}
+let cptYear=null;
+
+/* ---------- Administration ---------- */
+function admView(){const have=t=>!!tables[t];const names=SCHEMA.map(s=>s[0]);const miss=names.filter(n=>!have(n));
+ let h=`<div class="adm">`;
+ if(miss.length){h+=`<section><h3>Installation</h3><p>Tableaux manquants : ${miss.map(esc).join(', ')}.</p><p class="note">Le bouton crée les tableaux, leurs formules et les données de référence (groupes, codes, barème APORTT, fériés 2027-2031, vacances 2027-2028, trigrammes actuels). À faire une seule fois, par un propriétaire du document.</p><button class="btn pri" id="install">Créer les tableaux</button></section>`}
+ if(D){const y=new Date().getUTCFullYear();h+=`<section><h3>Début d'année</h3><p class="note">Crée une ligne de compteur pour chaque agent affecté dans l'année, s'il n'en a pas déjà une.</p>
+  <div class="fld"><label>Année<input id="admY" type="number" value="${y}" min="2027" max="2040"></label></div><div class="acts" style="justify-content:flex-start"><button class="btn pri" id="mkCpt">Créer les compteurs</button><button class="btn" id="mkFer">Ajouter les fériés de cette année</button></div></section>
+  <section><h3>Arrivées, départs, changements de groupe</h3><ul><li>Arrivée : ajoutez l'agent dans le tableau <b>Agents</b> (trigramme, e-mail, quotité), puis une ligne dans <b>Affectations</b> (groupe, date de début). Invitez-le avec le bouton Partager.</li><li>Départ : renseignez la date de <b>Fin</b> de son affectation, puis retirez-le du partage. Ses saisies passées restent.</li><li>Changement de groupe : fin de l'ancienne affectation, nouvelle ligne avec le nouveau groupe.</li><li>Vacances scolaires : complétez le tableau <b>Vacances</b> chaque année.</li></ul></section>`}
+ return h+'</div>'}
+async function install(){const btn=document.getElementById('install');btn.disabled=true;btn.textContent='Installation…';
+ try{
+  const have=new Set((await grist.docApi.listTables())||[]);
+  for(const [t,cols] of SCHEMA){if(have.has(t))continue;
+   const spec=cols.map(([id,type,wo,formula])=>{const o={id,type,isFormula:!!formula};if(formula)o.formula=formula;if(wo)o.widgetOptions=wo;return o});
+   try{await grist.docApi.applyUserActions([['AddRawTable',t,spec]])}catch(e){await grist.docApi.applyUserActions([['AddTable',t,spec]])}}
+  const bulk=async(t,cols,rows)=>{if(!rows.length)return [];const v={};cols.forEach((c,i)=>v[c]=rows.map(r=>r[i]));const r=await grist.docApi.applyUserActions([['BulkAddRecord',t,rows.map(()=>null),v]]);return (r&&r.retValues&&r.retValues[0])||[]};
+  const empty=async t=>{const x=await fetchT(t);return !x||!x.length};
+  if(await empty('Groupes'))await bulk('Groupes',['Code','Nom','Type','Ancre','Prise_service','Ordre','Minimum'],SEED.Groupes.map(r=>[r[0],r[1],r[2],r[3]?iso2sec(r[3]):null,r[4],r[5],r[6]]));
+  if(await empty('Codes'))await bulk('Codes',['Code','Libelle','Famille','Unite','Compteur','Presence','Actif','Ordre'],SEED.Codes);
+  if(await empty('Bareme'))await bulk('Bareme',['Regime','Quotite','CA','ARTT','CF','NT'],SEED.Bareme);
+  if(await empty('Vacances'))await bulk('Vacances',['Zone','Debut','Fin','Libelle'],SEED.Vacances.map(r=>[r[0],iso2sec(r[1]),iso2sec(r[2]),r[3]]));
+  if(await empty('Feries')){const rows=[];for(let y=2027;y<=2031;y++)feries(y).forEach(([d,l])=>rows.push([iso2sec(d),l]));await bulk('Feries',['Date','Libelle'],rows)}
+  if(await empty('Agents')){
+   const ag=[];let o=0;const res=[];
+   SEED.Agents.forEach(r=>ag.push([r[0],'','','Agent',100,++o]));
+   ['J1','N1','J2','N2'].forEach(g=>{for(let i=1;i<=2;i++){ag.push(['RES'+i+'-'+g,'Réserviste','','Réserviste',100,100+(++o)]);res.push(g)}});
+   await bulk('Agents',['Trigramme','Nom','Email','Statut','Quotite','Ordre'],ag);
+   const A=await fetchT('Agents'),Gs=await fetchT('Groupes');const gid=c=>(Gs.find(g=>g.Code===c)||{}).id;
+   const map=Object.fromEntries(SEED.Agents.map(r=>[r[0],r[1]]));
+   const aff=A.map(a=>{const g=map[a.Trigramme]||(a.Trigramme.split('-')[1]);return [a.id,gid(g),iso2sec('2027-01-01'),null]}).filter(r=>r[1]);
+   await bulk('Affectations',['Agent','Groupe','Debut','Fin'],aff)}
+  toast('Installation terminée. Pensez aux règles d\'accès (voir le guide).',7000);await load();
+ }catch(e){console.error(e);toast('Erreur pendant l\'installation : '+(e.message||e),9000);btn.disabled=false;btn.textContent='Réessayer'}}
+async function mkCpt(){const y=+document.getElementById('admY').value;const d0=y+'-01-01',d1=y+'-12-31';
+ const ex=new Set(D.CPT.filter(c=>c.Annee===y).map(c=>c.Agent));
+ const ids=[...new Set(D.aff.filter(f=>f.d0<=d1&&f.d1>=d0).map(f=>f.ag))].filter(a=>D.A[a]&&D.A[a].Statut!=='Réserviste'&&!ex.has(a));
+ if(!ids.length)return toast('Tous les compteurs '+y+' existent déjà.');
+ try{await grist.docApi.applyUserActions([['BulkAddRecord','Compteurs',ids.map(()=>null),{Agent:ids,Annee:ids.map(()=>y)}]]);toast(ids.length+' compteur(s) créé(s).');await load()}catch(e){toast('Refusé : seuls les propriétaires du document peuvent créer les compteurs.')}}
+async function mkFer(){const y=+document.getElementById('admY').value;const ex=new Set([...D.FER]);const rows=feries(y).filter(([d])=>!ex.has(d));
+ if(!rows.length)return toast('Les fériés '+y+' sont déjà présents.');
+ try{await grist.docApi.applyUserActions([['BulkAddRecord','Feries',rows.map(()=>null),{Date:rows.map(r=>iso2sec(r[0])),Libelle:rows.map(r=>r[1])}]]);toast(rows.length+' jours fériés ajoutés.');await load()}catch(e){toast('Refusé : action réservée aux propriétaires.')}}
+
+/* ---------- Rendu général ---------- */
+function render(){
+ document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.id==='t-'+tab));
+ const V=document.getElementById('view');
+ const gridTab=['saisie','sup','an'].includes(tab);
+ document.getElementById('bar').classList.toggle('hidden',!gridTab||!D);document.getElementById('legend').classList.toggle('hidden',!gridTab||tab==='an'||!D);
+ if(!D){document.getElementById('kpis').innerHTML='';document.getElementById('cLab').textContent='';V.innerHTML=admView();bindAdm();return}
+ const ms=months();if(mon>12)mon=12;document.getElementById('cLab').textContent='Campagne '+camp+'-'+(camp+1);
+ const s=stats(ms);document.getElementById('kpis').innerHTML=`<span class="kpi ${s.ko?'bad':''}"><b>${s.ko}</b>vacations sous le minimum</span><span class="kpi"><b>${s.pend}</b>absences à confirmer</span>`;
+ document.getElementById('grpPills').classList.toggle('hidden',tab!=='saisie');document.getElementById('monPills').classList.toggle('hidden',tab==='an');
+ document.getElementById('grpPills').innerHTML=allGroups().map(g=>`<button data-gp="${esc(g.Code)}" aria-pressed="${g.Code===grp}">${esc(g.Nom||g.Code)}</button>`).join('');
+ document.getElementById('monPills').innerHTML=ms.map((m,i)=>`<button data-m="${i}" aria-pressed="${i===mon}">${esc(m.lab)}</button>`).join('');
+ const m=ms[mon];
+ if(tab==='saisie'){const g=D.G[grp]||allGroups()[0];grp=g.Code;V.innerHTML=grid([g],m,admin)}
+ else if(tab==='sup'){const ym=iso(m.days[0]).slice(0,7);const al=s.al.filter(a=>a[0].slice(0,7)===ym);
+  const pend=Object.values(D.S).filter(x=>x.d.slice(0,7)===ym&&x.Code&&D.C[x.Code]&&D.C[x.Code].Presence!=='Présent'&&!(x.Code==='HS'&&x.Sens==='Acquis')&&!x.Confirme);
+  V.innerHTML=`<div class="lay sup">${grid(allGroups(),m,true)}<aside class="side"><h3>${esc(m.full)}</h3><b>${al.length?al.length+' vacation(s) sous le minimum':'Aucun sous-effectif'}</b><ul>${al.map(([d,g,n])=>`<li>${fmtD(d)} · ${esc(g.Nom)} · ${n}</li>`).join('')}</ul>
+  <b>${pend.length} absence(s) à confirmer</b><ul>${pend.slice(0,10).map(x=>`<li>${esc(D.A[x.Agent]?.Trigramme)} · ${esc(x.Code)} · ${fmtD(x.d)}</li>`).join('')}${pend.length>10?`<li>et ${pend.length-10} autre(s)</li>`:''}</ul></aside></div>`}
+ else if(tab==='an'){const all=[];ms.forEach(x=>all.push(...x.days));
+  V.innerHTML=`<h2 style="margin:4px 0;font-size:18px">${s.ko?s.ko+' vacation(s) sous le minimum sur la campagne':'Effectif minimum tenu sur toute la campagne'}</h2><p class="note" style="margin:0 0 10px">Une case par jour. Cliquez un mois pour l'ouvrir dans la vue superviseur.</p>
+  <div class="year"><span></span><div class="mlab" style="grid-template-columns:repeat(${all.length},minmax(0,1fr))">${ms.map((x,i)=>`<button data-jm="${i}" style="grid-column:span ${x.days.length}">${esc(x.lab)}</button>`).join('')}</div>
+  ${cycGroups().map(g=>`<b>${esc(g.Nom)}</b><div class="strip">${all.map(t=>{if(!worked(g.Code,t))return '<i class="f"></i>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<i class="${n<mi?'k':n===mi?'l':'w'}" title="${fmtD(iso(t))} : ${n}"></i>`}).join('')}</div>`).join('')}</div>`}
+ else if(tab==='cpt'){V.innerHTML=cptView();bindCpt()}
+ else{V.innerHTML=admView();bindAdm()}
+}
+function bindAdm(){const i=document.getElementById('install');if(i)i.onclick=install;const c=document.getElementById('mkCpt');if(c)c.onclick=mkCpt;const f=document.getElementById('mkFer');if(f)f.onclick=mkFer}
+function bindCpt(){const a=document.getElementById('cAg');if(a)a.onchange=()=>{cptAgent=+a.value;render()};const y=document.getElementById('cYr');if(y)y.onchange=()=>{cptYear=+y.value;render()};
+ const b=document.getElementById('saveRep');if(b)b.onclick=async()=>{const v={};document.querySelectorAll('[data-rep]').forEach(i=>{v[i.dataset.rep]=i.dataset.u==='h'?s2h(i.value):(parseFloat(String(i.value).replace(',','.'))||0)});
+  try{await grist.docApi.applyUserActions([['UpdateRecord','Compteurs',+b.dataset.id,v]]);toast('Reports enregistrés.');await load()}catch(e){toast('Enregistrement refusé.')}}}
+
+/* ---------- Saisie ---------- */
+let cur=null,sel=null,forceSave=false;
+function openCell(aid,gc,d){const a=D.A[aid];if(!a)return;if(!canEdit(a,d))return toast('Vous ne pouvez modifier que votre groupe.');
+ const s=D.S[aid+'|'+d]||{};cur={a,gc,d,s};sel=s.Code||null;forceSave=false;
+ document.getElementById('dT').textContent=(a.Statut==='Réserviste'?'Réserviste':a.Trigramme)+' · '+fmtD(d);
+ document.getElementById('dS').textContent=(D.G[gc]?.Nom||gc)+(worked(gc,Date.parse(d))?' · jour travaillé':' · repos du cycle')+(D.FER.has(d)?' · férié':'');
+ const fam={cg:'Congés et repos',md:'Maladie et famille',fo:'Stage et convocation',pr:'Présence et heures',am:'Temps partiel'};
+ const list=a.Statut==='Réserviste'?Object.values(D.C).filter(c=>c.Code==='RES'):Object.values(D.C).filter(c=>c.Code!=='RES').sort((x,y)=>(x.Ordre||0)-(y.Ordre||0));
+ document.getElementById('dCodes').innerHTML=Object.keys(fam).map(f=>{const l=list.filter(c=>(c.Famille||'cg')===f);return l.length?`<div class="cg"><h4>${fam[f]}</h4><div>${l.map(c=>`<button class="cb k-${f}" data-c="${esc(c.Code)}" title="${esc(c.Libelle)}">${esc(c.Code)}</button>`).join('')}</div></div>`:''}).join('');
+ document.getElementById('fH').value=s.Heures?h2s(s.Heures).replace('h',':'):'';document.getElementById('fC').value=s.Commentaire||'';document.getElementById('fN').value=s.Nom_reserviste||'';
+ document.getElementById('fOk').checked=!!s.Confirme;document.getElementById('fSens').value=s.Sens||'Consommé';document.getElementById('fDA').value=s.Compteur_DA||'HS';document.getElementById('fFin').value='';document.getElementById('fFin').min=d;
+ document.getElementById('fG').innerHTML=cycGroups().filter(g=>g.Code!==gc).map(g=>`<option value="${esc(g.Code)}" ${s.Groupe_renfort===g.Code?'selected':''}>${esc(g.Nom)}</option>`).join('');
+ document.getElementById('lN').classList.toggle('hidden',a.Statut!=='Réserviste');document.getElementById('lOk').classList.toggle('hidden',!admin);
+ fields();document.getElementById('ov').classList.add('on')}
+function fields(){const c=sel&&D.C[sel];document.getElementById('lH').classList.toggle('hidden',!(c&&c.Unite==='Heures'));
+ document.getElementById('lSens').classList.toggle('hidden',sel!=='HS');document.getElementById('lDA').classList.toggle('hidden',!(sel==='D-A'||sel==='P-R'));
+ document.getElementById('lG').classList.toggle('hidden',sel!=='RFR');document.getElementById('lFin').classList.toggle('hidden',!sel||['RFR','RES','HS'].includes(sel));
+ document.querySelectorAll('#dCodes .cb').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===sel));document.getElementById('dWarn').classList.add('hidden');forceSave=false;document.getElementById('dSave').textContent='Enregistrer';document.getElementById('dSave').classList.remove('warn')}
+function targetDates(){const {d,gc}=cur;const fin=document.getElementById('fFin').value;if(!fin||fin<=d||!sel||['RFR','RES','HS'].includes(sel))return [d];
+ const out=[];for(let t=Date.parse(d);t<=Date.parse(fin);t+=DAY){const x=iso(t);if(x===d||(groupAt(cur.a.id,x)===gc&&worked(gc,t)))out.push(x)}return out}
+function counterOf(v){if(!v.Code)return null;if(v.Code==='HS')return v.Sens==='Acquis'?null:'HS';if(v.Code==='D-A'||v.Code==='P-R')return v.Compteur_DA||'HS';const c=D.C[v.Code];return c&&c.Compteur?(c.Compteur):null}
+function amountOf(v,gc){const c=D.C[v.Code];if(!c)return 0;if(c.Unite==='Vacation')return 1;return v.Heures||((v.Code==='D-A'||v.Code==='P-R')?0:dmj(gc))}
+function warnings(vals,dates){const y=dates[0].slice(0,4);const cp=D.CPT.find(c=>c.Agent===cur.a.id&&String(c.Annee)===y);if(!cp||!cp.j)return [];
+ const k=counterOf(vals);if(!k||k==='RTT')return [];const row=cp.j.rows.find(r=>r.k===k);if(!row)return [];
+ let delta=0;dates.forEach(d=>{const old=D.S[cur.a.id+'|'+d];if(old&&counterOf(old)===k)delta-=amountOf(old,cur.gc);delta+=amountOf(vals,cur.gc)});
+ const after=row.projete-delta;if(after<-1e-6)return [`${row.lib} : solde projeté au 31/12 après cette saisie ${row.u==='j'?(Math.round(after*10)/10)+' j':h2s(after)}.`];return []}
+async function save(){if(!cur)return;const vals={Code:sel||''};const c=sel&&D.C[sel];
+ vals.Heures=c&&c.Unite==='Heures'?s2h(document.getElementById('fH').value):0;
+ vals.Sens=sel==='HS'?document.getElementById('fSens').value:null;vals.Compteur_DA=(sel==='D-A'||sel==='P-R')?document.getElementById('fDA').value:null;
+ vals.Groupe_renfort=sel==='RFR'?document.getElementById('fG').value:'';vals.Nom_reserviste=cur.a.Statut==='Réserviste'?document.getElementById('fN').value.trim():'';
+ vals.Commentaire=document.getElementById('fC').value.trim();if(admin)vals.Confirme=document.getElementById('fOk').checked;
+ if(sel==='HS'&&vals.Sens==='Acquis'&&!vals.Heures)return toast('Indiquez le total d\'heures acquises.');
+ if((sel==='D-A'||sel==='P-R')&&!vals.Heures)return toast('Indiquez la durée.');
+ const dates=targetDates();
+ if(!forceSave){const w=warnings(vals,dates);if(w.length){const box=document.getElementById('dWarn');box.innerHTML=w.map(esc).join('<br>')+'<br>La saisie reste possible.';box.classList.remove('hidden');forceSave=true;const b=document.getElementById('dSave');b.textContent='Enregistrer quand même';b.classList.add('warn');return}}
+ if(!vals.Code&&!vals.Commentaire&&!vals.Nom_reserviste)return del();
+ const acts=dates.map(d=>{const old=D.S[cur.a.id+'|'+d];const v={...vals};if(d!==cur.d&&old&&old.Commentaire&&!v.Commentaire)v.Commentaire=old.Commentaire;
+  return old?['UpdateRecord','Saisies',old.id,v]:['AddRecord','Saisies',null,{...v,Agent:cur.a.id,Date:iso2sec(d),Groupe:cur.gc}]});
+ try{await grist.docApi.applyUserActions(acts);close();toast(dates.length>1?dates.length+' jours enregistrés.':'Enregistré.');await load()}catch(e){console.error(e);toast('Modification refusée : vous ne pouvez modifier que votre groupe.')}}
+async function del(){const old=D.S[cur.a.id+'|'+cur.d];if(!old){close();return}
+ try{await grist.docApi.applyUserActions([['RemoveRecord','Saisies',old.id]]);close();toast('Case effacée.');await load()}catch(e){toast('Suppression refusée.')}}
+function close(){document.getElementById('ov').classList.remove('on')}
+
+/* ---------- Impression ---------- */
+function doPrint(){const ms=months(),mode=document.getElementById('printSel').value,P=document.getElementById('printArea');let h='';
+ const gs=mode==='yg'?[D.G[grp]]:allGroups();
+ if(mode==='m'){const m=ms[mon];h=`<h2>Planning CIC · ${esc(m.full)}</h2>`+(tab==='saisie'?grid([D.G[grp]],m,false):grid(allGroups(),m,true))}
+ else ms.forEach(m=>{if(m.days.length)h+=`<div class="blk"><h2>Planning CIC · ${esc(m.full)}${mode==='yg'?' · '+esc(D.G[grp].Nom):''}</h2>${grid(gs,m,false)}</div>`});
+ P.innerHTML=h;try{window.print()}catch(e){toast('Impression bloquée par le navigateur : ouvrez le widget en plein écran puis réessayez.')}}
+
+/* ---------- Événements ---------- */
+document.addEventListener('click',ev=>{const b=ev.target.closest('button,td.c');if(!b)return;
+ if(b.matches('td.c'))return openCell(+b.dataset.a,b.dataset.g,b.dataset.d);
+ if(b.dataset.gp){grp=b.dataset.gp;render()}else if(b.dataset.m){mon=+b.dataset.m;render()}else if(b.dataset.jm){mon=+b.dataset.jm;tab='sup';render()}
+ else if(b.dataset.c){sel=sel===b.dataset.c?null:b.dataset.c;fields()}
+ else if(b.id&&b.id.startsWith('t-')){tab=b.id.slice(2);render()}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')close();if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('td.c')){ev.preventDefault();openCell(+ev.target.dataset.a,ev.target.dataset.g,ev.target.dataset.d)}});
+document.getElementById('dX').onclick=close;document.getElementById('dDel').onclick=del;document.getElementById('dSave').onclick=save;
+document.getElementById('ov').onclick=ev=>{if(ev.target.id==='ov')close()};
+['fSens','fDA','fFin','fH'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{forceSave=false;document.getElementById('dWarn').classList.add('hidden');const b=document.getElementById('dSave');b.textContent='Enregistrer';b.classList.remove('warn')}));
+document.getElementById('cPrev').onclick=()=>{camp=Math.max(2026,camp-1);mon=0;render()};document.getElementById('cNext').onclick=()=>{camp++;mon=0;render()};
+document.getElementById('refresh').onclick=load;document.getElementById('printBtn').onclick=doPrint;
+
+/* ---------- Démarrage ---------- */
+if(!window.grist){document.getElementById('view').innerHTML='<p>Ce widget doit être ouvert dans un document Grist (widget personnalisé, accès complet au document).</p>'}
+else{grist.ready({requiredAccess:'full'});let tm=null;grist.onRecords(()=>{clearTimeout(tm);tm=setTimeout(load,300)});load();setInterval(()=>{if(!document.getElementById('ov').classList.contains('on'))load()},120000)}
+}
+</script>
+</body>
+</html>
