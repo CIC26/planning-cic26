@@ -259,7 +259,7 @@ async function load(){
  const vis=new Set(CPT.map(c=>c.Agent));admin=vis.size>1;
  me=vis.size===1?[...vis][0]:null;
  if(camp===null){const t=new Date();let y=t.getUTCFullYear();if(t.getUTCMonth()<2||(t.getUTCMonth()===2&&t.getUTCDate()<15))y--;camp=Math.max(2026,y);mon=defMonth()}
- if(me&&grp==='J1'&&!loaded){const g=groupAt(me,iso(Date.now()));if(g)grp=g}
+ if(me&&grp==='J1'&&!loaded){const g=(D.A[me]&&D.A[me].Groupe)||groupAt(me,iso(Date.now()));if(g&&D.G[g])grp=g}
  loaded=true;render();
 }
 let loaded=false;
@@ -288,7 +288,8 @@ function stats(ms){let ko=0,pend=0;const al=[];const t0=ms[0].days[0],t1=ms[12].
 function head(days,label){const c=t=>{const d=iso(t),w=dow(t);return `${w===0||w===6||D.FER.has(d)?'we':''} ${D.FER.has(d)?'fe':''}`};
  let h=`<thead><tr><th class="nm">${esc(label)}</th>${days.map(t=>`<th class="dh ${c(t)}">${WD[dow(t)]}<b>${new Date(t).getUTCDate()}</b></th>`).join('')}</tr>`;
  ['A','B','C'].forEach(z=>h+=`<tr class="zr"><th class="nm">Zone ${z}</th>${days.map(t=>{const d=iso(t);return `<td class="z${z} ${D.VAC.some(v=>v.z===z&&v.a<=d&&d<=v.b)?'on':''}"></td>`}).join('')}</tr>`);return h+'</thead>'}
-function canEdit(a,d){if(admin||!me)return true;return groupAt(me,iso(Date.now()))===groupAt(a.id,d)}
+const myGroup=d=>(D.A[me]&&D.A[me].Groupe)||groupAt(me,d)||groupAt(me,iso(Date.now()));
+function canEdit(a,d){if(admin||!me)return true;const g=groupAt(a.id,d);return !!g&&(g===myGroup(d)||g===groupAt(me,d))}
 function cell(a,gc,t,sup){const d=iso(t),w=dow(t),s=D.S[a.id+'|'+d];const inAff=groupAt(a.id,d)===gc;
  if(!inAff)return '<td class="na" title="Hors affectation"></td>';
  const off=!worked(gc,t);let cls='c'+(off?' off':'')+(w===0||w===6||D.FER.has(d)?' we':'')+(canEdit(a,d)?'':' ro'),inner='';
