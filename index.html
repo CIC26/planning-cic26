@@ -119,6 +119,21 @@ table.svc td.neg{color:var(--red);font-weight:700}
 table.svc td.mut{color:var(--mut)}
 table.svc td.al-c{color:var(--red);font-weight:700}
 @media(hover:hover){.g td.hl,.g th.hl{box-shadow:inset 0 0 0 999px rgba(44,90,160,.13)}.g td.hl-x{box-shadow:inset 0 0 0 999px rgba(44,90,160,.22)}}
+.calc-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.calc-top h2{margin:0;font-size:18px}
+.calc-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.calc-c{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.calc-c h3{margin:0 0 8px;font-size:15px}
+.calc-c .fld{margin-top:4px}
+.calc-r{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin-top:10px;font-size:14px}
+.calc-r b{font-size:20px;font-variant-numeric:tabular-nums;text-align:right}
+.calc-r span{align-self:center;color:var(--mut)}
+.swap{align-self:end;font-size:20px;color:var(--mut);padding:0 4px 6px}
+table.mix{border-collapse:collapse;width:100%;font-size:13px;margin-top:10px}
+table.mix th,table.mix td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.mix th{background:var(--panel);font-weight:600}
+table.mix tr.best td{background:#e3f3ee;font-weight:700}
+table.mix tr.pick td{background:#dfe8f7;font-weight:700}
 #printArea{display:none}
 @media print{
  @page{size:A4 landscape;margin:8mm}
@@ -157,6 +172,7 @@ table.svc td.al-c{color:var(--red);font-weight:700}
     <button id="t-an" aria-selected="false">Vue annuelle</button>
     <button id="t-cpt" aria-selected="false">Mon compteur</button>
     <button id="t-svc" aria-selected="false" class="hidden">Compteurs du service</button>
+    <button id="t-calc" aria-selected="false">Calculatrice</button>
     <button id="t-adm" aria-selected="false">Administration</button>
   </nav>
 </header>
@@ -421,6 +437,44 @@ async function upgrade(){const btn=document.getElementById('upgrade');btn.disabl
   await grist.docApi.applyUserActions(acts);toast('Structure mise à jour ('+acts.length+' modifications).',6000);await load()
  }catch(e){console.error(e);toast('Erreur pendant la mise à jour : '+(e.message||e),9000);btn.disabled=false;btn.textContent='Réessayer'}}
 
+
+/* ---------- Calculatrice (ne mémorise rien) ---------- */
+const H_CET=H(8,21),H_CYC=H(12,8),H_HEB=H(7,53);
+const parseH=v=>{v=String(v||'').trim().toLowerCase().replace(',','.');if(!v)return null;if(/[:h]/.test(v)){const p=v.split(/[:h]/);const hh=parseFloat(p[0]||'0'),mm=parseFloat(p[1]||'0');if(!isFinite(hh)||!isFinite(mm))return null;return (v.startsWith('-')?-1:1)*(Math.abs(hh)+mm/60)}const x=parseFloat(v);return isFinite(x)?x:null};
+const hm=h=>{const neg=h<0;const m=Math.round(Math.abs(h)*60);return (neg?'−':'')+Math.floor(m/60)+'h'+String(m%60).padStart(2,'0')};
+const dec=h=>(Math.round(h*100)/100).toString().replace('.',',');
+function calcView(){return `<div class="calc-top"><h2>Calculatrice d'heures</h2><button class="btn" id="cReset">Remise à zéro</button></div>
+<p class="note" style="margin:0 0 10px">Rien n'est enregistré. Les heures se saisissent au choix en décimal (188,15) ou en heures (188:09 ou 188h09).</p>
+<div class="calc-g">
+ <section class="calc-c"><h3>Convertir décimal ⇄ heures</h3>
+  <div class="fld"><label>Décimal<input id="cDec" inputmode="decimal" placeholder="1,5"></label><span class="swap">⇄</span><label>Heures<input id="cHm" placeholder="1:30"></label></div>
+  <p class="note" style="margin:8px 0 0">Le tableau Compteurs de Grist affiche les heures en décimal : 1,5 = 1h30 ; 188,15 = 188h09.</p></section>
+ <section class="calc-c"><h3>Que vaut un solde d'heures ?</h3>
+  <div class="fld"><label>Solde d'heures<input id="cSolde" placeholder="188:09"></label><label>Une journée posée vaut<select id="cVac"><option value="${H_CYC}">12h08 (cyclique)</option><option value="${H_HEB}">7h53 (hebdomadaire)</option></select></label></div>
+  <div class="calc-r" id="cOut"><span>Saisissez un solde.</span><b></b></div></section>
+</div>
+<section class="calc-c" style="margin-top:12px"><h3>Répartir entre jours posés et CET</h3>
+ <p class="note" style="margin:0">À partir du solde ci-dessus : pour chaque nombre de jours posés, ce qui reste part au CET par tranches de 8h21.</p>
+ <div class="fld"><label>Jours que j'envisage de poser<input id="cN" type="number" min="0" step="1" placeholder="ex. 4"></label><label>Plafond de jours CET (facultatif)<input id="cCap" type="number" min="0" step="1" placeholder="aucun"></label></div>
+ <div id="cMix"></div></section>`}
+function bindCalc(){const $=id=>document.getElementById(id);
+ const conv=src=>{if(src==='d'){const x=parseH($('cDec').value);$('cHm').value=x===null?'':hm(x).replace('h',':')}else{const x=parseH($('cHm').value);$('cDec').value=x===null?'':dec(x)}};
+ $('cDec').addEventListener('input',()=>conv('d'));$('cHm').addEventListener('input',()=>conv('h'));
+ const upd=()=>{const S=parseH($('cSolde').value),V=+$('cVac').value,o=$('cOut'),M=$('cMix');
+  if(S===null||S<=0){o.innerHTML='<span>Saisissez un solde.</span><b></b>';M.innerHTML='';return}
+  const jp=Math.floor(S/V+1e-9),rp=S-jp*V,jc=Math.floor(S/H_CET+1e-9),rc=S-jc*H_CET;
+  o.innerHTML=`<span>Solde</span><b>${hm(S)} · ${dec(S)}</b><span>En jours posés (${hm(V)})</span><b>${jp} j + ${hm(rp)}</b><span>En jours CET (8h21)</span><b>${jc} j + ${hm(rc)}</b><span>Équivalent exact</span><b>${dec(S/V)} j posés · ${dec(S/H_CET)} j CET</b>`;
+  const cap=$('cCap').value===''?Infinity:Math.max(0,+$('cCap').value),N=$('cN').value===''?null:Math.max(0,Math.floor(+$('cN').value));
+  const rows=[];for(let n=0;n<=jp;n++){const r=S-n*V;let c=Math.floor(r/H_CET+1e-9);if(c>cap)c=cap;rows.push({n,r,c,left:r-c*H_CET,tot:n+c})}
+  const best=Math.max(...rows.map(r=>r.tot));
+  let h='';if(N!==null){const r=rows.find(x=>x.n===N);h+=r?`<p style="margin:10px 0 0"><b>${N} jour(s) posé(s)</b> utilisent ${hm(N*V)} ; il reste ${hm(r.r)}, soit <b>${r.c} jour(s) CET</b> et ${hm(r.left)} non utilisées.</p>`:`<p class="al" style="margin:10px 0 0">${N} jours posés demandent ${hm(N*V)}, plus que le solde (${hm(S)}).</p>`}
+  h+=`<div class="scroll" style="border:0"><table class="mix"><thead><tr><th>Jours posés</th><th>Heures utilisées</th><th>Reste</th><th>Jours CET</th><th>Non utilisé</th><th>Total jours</th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.tot===best?'best':''} ${r.n===N?'pick':''}"><td>${r.n}</td><td>${hm(r.n*V)}</td><td>${hm(r.r)}</td><td>${r.c}</td><td>${hm(r.left)}</td><td>${r.tot}</td></tr>`).join('')}</tbody></table></div>
+  <p class="note" style="margin:6px 0 0">En vert : les répartitions qui donnent le plus de jours au total. Une heure versée au CET « vaut » plus qu'une heure posée, car la journée CET ne coûte que 8h21.</p>`;
+  M.innerHTML=h};
+ ['cSolde','cVac','cN','cCap'].forEach(id=>{$(id).addEventListener('input',upd);$(id).addEventListener('change',upd)});
+ $('cReset').onclick=()=>{['cDec','cHm','cSolde','cN','cCap'].forEach(id=>$(id).value='');$('cVac').selectedIndex=0;upd();$('cDec').focus()};
+ const me_=me&&D.A[me]&&D.G[D.A[me].Groupe];if(me_&&me_.Type==='Hebdo')$('cVac').selectedIndex=1;upd()}
+
 /* ---------- Rendu général ---------- */
 function render(){
  if(tab==='svc'&&!admin)tab='cpt';
@@ -446,6 +500,7 @@ function render(){
   <div class="year"><span></span><div class="mlab" style="grid-template-columns:repeat(${all.length},minmax(0,1fr))">${ms.map((x,i)=>`<button data-jm="${i}" style="grid-column:span ${x.days.length}">${esc(x.lab)}</button>`).join('')}</div>
   ${cycGroups().map(g=>`<b>${esc(g.Nom)}</b><div class="strip">${all.map(t=>{if(!worked(g.Code,t)||!staffed(g.Code,t))return '<i class="f"></i>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<i class="${n<mi?'k':n===mi?'l':'w'}" title="${fmtD(iso(t))} : ${n}"></i>`}).join('')}</div>`).join('')}</div>`}
  else if(tab==='cpt'){V.innerHTML=cptView();bindCpt()}
+ else if(tab==='calc'){V.innerHTML=calcView();bindCalc()}
  else if(tab==='svc'&&admin){V.innerHTML=svcView();const y=document.getElementById('sYr');if(y)y.onchange=()=>{svcYear=+y.value;render()}}
  else{V.innerHTML=admView();bindAdm()}
 }
