@@ -118,6 +118,7 @@ table.svc tbody tr:hover{background:color-mix(in srgb,var(--blue) 8%,transparent
 table.svc td.neg{color:var(--red);font-weight:700}
 table.svc td.mut{color:var(--mut)}
 table.svc td.al-c{color:var(--red);font-weight:700}
+@media(hover:hover){.g td.hl,.g th.hl{box-shadow:inset 0 0 0 999px rgba(44,90,160,.13)}.g td.hl-x{box-shadow:inset 0 0 0 999px rgba(44,90,160,.22)}}
 #printArea{display:none}
 @media print{
  @page{size:A4 landscape;margin:8mm}
@@ -177,7 +178,7 @@ table.svc td.al-c{color:var(--red);font-weight:700}
     <span><i style="background:var(--red)"></i>Numéro d'un jour férié</span>
     <span><i style="background:#e07a2e"></i>Zone A</span><span><i style="background:#3f9e5a"></i>Zone B</span><span><i style="background:#7b5cc4"></i>Zone C</span>
     <span><i class="k-cg"></i>Congés, repos</span><span><i class="k-md"></i>Maladie, famille</span><span><i class="k-fo"></i>Stage, convocation</span><span><i class="k-pr"></i>Présence</span><span><i class="k-am"></i>Temps partiel</span>
-    <span><b style="color:var(--teal)">✓</b> confirmé dans le logiciel officiel</span><span><i style="background:#c9ced6"></i>Hors affectation</span>
+    <span><b style="color:var(--teal)">✓</b> confirmé dans GESTT</span><span><i style="background:#c9ced6"></i>Hors affectation</span>
   </div>
 </main>
 <div id="printArea"></div>
@@ -195,7 +196,7 @@ table.svc td.al-c{color:var(--red);font-weight:700}
     <label id="lFin">Jusqu'au (inclus, jours travaillés seulement)<input id="fFin" type="date"></label>
     <label style="flex-basis:100%">Commentaire (tir, visite médicale…)<input id="fC" type="text" maxlength="80"></label>
   </div>
-  <label class="chk" id="lOk"><input type="checkbox" id="fOk">Confirmé dans le logiciel officiel</label>
+  <label class="chk" id="lOk"><input type="checkbox" id="fOk">Confirmé dans GESTT</label>
   <div id="dWarn" class="warnbox hidden"></div>
   <div class="acts"><button class="btn" id="dDel">Effacer</button><button class="btn" id="dX">Fermer</button><button class="btn pri" id="dSave">Enregistrer</button></div>
 </div></div>
@@ -345,7 +346,7 @@ function cptView(){const y=new Date().getUTCFullYear();const years=[...new Set(D
   <tr><td>${r.k==='RPS'||r.k==='HS'?'Report au 1er janvier':r.k==='HP'?'Gagnés (CA hors mai-octobre : '+j.ca_hors_periode+')':'Droit de l\'année'}</td><td>${f(r.droit,r.u)}</td></tr>${extra}
   <tr><td>Pris à ce jour</td><td>${f(r.pris,r.u)}</td></tr><tr><td>Posé à venir</td><td>${f(r.avenir,r.u)}</td></tr><tr><td>Solde aujourd'hui</td><td>${f(r.solde,r.u)}</td></tr>${cet}</table></div>`}).join('')+'</div>';
  const RU=j.regime==='Hebdo'?'j':'h';const R=[['Report_CA','CA reportés (jours)','j'],['Report_RTT',j.regime==='Hebdo'?'RTT reportés (jours)':'RTC reportés',RU],['Report_CF','Crédit férié reporté (exceptionnel)','h'],['Report_RPS','Reliquat RPS','h'],['Report_HS','Solde HS au 1er janvier','h'],['Report_CET','Solde CET (jours)','j']];
- h+=`<h3 style="margin:18px 0 4px">Reports au 1er janvier ${yr}</h3><p class="note" style="margin:0">À recopier depuis le logiciel officiel. Heures au format 12:08.</p><div class="fld">${R.map(([k,l,u])=>`<label>${l}<input data-rep="${k}" data-u="${u}" value="${c[k]?(u==='h'?h2s(c[k]).replace('h',':'):c[k]):''}"></label>`).join('')}</div>
+ h+=`<h3 style="margin:18px 0 4px">Reports au 1er janvier ${yr}</h3><p class="note" style="margin:0">À recopier depuis GESTT. Heures au format 12:08.</p><div class="fld">${R.map(([k,l,u])=>`<label>${l}<input data-rep="${k}" data-u="${u}" value="${c[k]?(u==='h'?h2s(c[k]).replace('h',':'):c[k]):''}"></label>`).join('')}</div>
   <div class="acts" style="justify-content:flex-start"><button class="btn pri" id="saveRep" data-id="${c.id}">Enregistrer les reports</button></div>`;
  return h}
 let cptYear=null;
@@ -439,7 +440,7 @@ function render(){
  else if(tab==='sup'){const ym=iso(m.days[0]).slice(0,7);const al=s.al.filter(a=>a[0].slice(0,7)===ym);
   const pend=Object.values(D.S).filter(x=>x.d.slice(0,7)===ym&&x.Code&&D.C[x.Code]&&D.C[x.Code].Presence!=='Présent'&&!(x.Code==='HS'&&x.Sens==='Acquis')&&!x.Confirme);
   V.innerHTML=`<div class="lay sup">${grid(allGroups(),m,true)}<aside class="side"><h3>${esc(m.full)}</h3><b>${al.length?al.length+' vacation(s) sous le minimum':'Aucun sous-effectif'}</b><ul>${al.map(([d,g,n])=>`<li>${fmtD(d)} · ${esc(g.Nom)} · ${n}</li>`).join('')}</ul>
-  <b>${pend.length} absence(s) à confirmer</b><ul>${pend.slice(0,10).map(x=>`<li>${esc(D.A[x.Agent]?.Trigramme)} · ${esc(x.Code)} · ${fmtD(x.d)}</li>`).join('')}${pend.length>10?`<li>et ${pend.length-10} autre(s)</li>`:''}</ul></aside></div>`}
+  <b>${pend.length} absence(s) à confirmer dans GESTT</b><ul>${pend.slice(0,10).map(x=>`<li>${esc(D.A[x.Agent]?.Trigramme)} · ${esc(x.Code)} · ${fmtD(x.d)}</li>`).join('')}${pend.length>10?`<li>et ${pend.length-10} autre(s)</li>`:''}</ul></aside></div>`}
  else if(tab==='an'){const all=[];ms.forEach(x=>all.push(...x.days));
   V.innerHTML=`<h2 style="margin:4px 0;font-size:18px">${s.ko?s.ko+' vacation(s) sous le minimum sur la campagne':'Effectif minimum tenu sur toute la campagne'}</h2><p class="note" style="margin:0 0 10px">Une case par jour. Cliquez un mois pour l'ouvrir dans la vue superviseur.</p>
   <div class="year"><span></span><div class="mlab" style="grid-template-columns:repeat(${all.length},minmax(0,1fr))">${ms.map((x,i)=>`<button data-jm="${i}" style="grid-column:span ${x.days.length}">${esc(x.lab)}</button>`).join('')}</div>
@@ -504,6 +505,19 @@ function doPrint(){const ms=months(),mode=document.getElementById('printSel').va
  if(mode==='m'){const m=ms[mon];h=`<h2>Planning CIC · ${esc(m.full)}</h2>`+(tab==='saisie'?grid([D.G[grp]],m,false):grid(allGroups(),m,true))}
  else ms.forEach(m=>{if(m.days.length)h+=`<div class="blk"><h2>Planning CIC · ${esc(m.full)}${mode==='yg'?' · '+esc(D.G[grp].Nom):''}</h2>${grid(gs,m,false)}</div>`});
  P.innerHTML=h;try{window.print()}catch(e){toast('Impression bloquée par le navigateur : ouvrez le widget en plein écran puis réessayez.')}}
+
+
+/* ---------- Surbrillance ligne + colonne au survol (grille uniquement) ---------- */
+let hlCells=[];
+function clearHl(){hlCells.forEach(c=>c.classList.remove('hl','hl-x'));hlCells=[]}
+document.addEventListener('mouseover',ev=>{const td=ev.target.closest('table.g td, table.g th');if(!td||!td.closest('#view')){if(hlCells.length)clearHl();return}
+ const tr=td.parentElement;if(tr.classList.contains('gh')){clearHl();return}
+ const ci=td.cellIndex;if(td.dataset.hlk===String(ci)+'|'+tr.rowIndex)return;clearHl();
+ const tbl=td.closest('table.g');
+ if(ci>0)for(const r of tbl.rows){if(r.classList.contains('gh'))continue;const c=r.cells[ci];if(c){c.classList.add('hl');hlCells.push(c)}}
+ if(!tr.classList.contains('zr')&&tr.parentElement.tagName!=='THEAD')for(const c of tr.cells){c.classList.add('hl');hlCells.push(c)}
+ if(ci>0){td.classList.add('hl-x');hlCells.push(td)}});
+document.addEventListener('mouseleave',clearHl);
 
 /* ---------- Événements ---------- */
 document.addEventListener('click',ev=>{const tr=ev.target.closest('tr[data-cag]');if(tr){cptAgent=+tr.dataset.cag;cptYear=+tr.dataset.cy;tab='cpt';return render()}
