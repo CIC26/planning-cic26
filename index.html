@@ -276,10 +276,11 @@ function staff(gc,t){const d=iso(t);let n=0;
  D.aff.forEach(f=>{if(f.g!==gc||f.d0>d||f.d1<d)return;const a=D.A[f.ag];if(!a)return;const s=D.S[a.id+'|'+d];
   if(a.Statut==='Réserviste'){if(s&&(s.Code==='RES'||s.Nom_reserviste))n++}else if(isPresent(s,gc))n++});
  for(const k in D.S){const s=D.S[k];if(s.d===d&&s.Code==='RFR'&&s.Groupe_renfort===gc)n++}return n}
+const staffed=(gc,t)=>{const d=iso(t);return D.aff.some(f=>f.g===gc&&f.d0<=d&&d<=f.d1&&D.A[f.ag]&&D.A[f.ag].Statut!=='Réserviste')};
 const cycGroups=()=>Object.values(D.G).filter(g=>g.Type!=='Hebdo').sort((a,b)=>(a.Ordre||0)-(b.Ordre||0));
 const allGroups=()=>Object.values(D.G).sort((a,b)=>(a.Ordre||0)-(b.Ordre||0));
 function stats(ms){let ko=0,pend=0;const al=[];const t0=ms[0].days[0],t1=ms[12].days[ms[12].days.length-1];
- cycGroups().forEach(g=>{for(let t=t0;t<=t1;t+=DAY)if(worked(g.Code,t)){const n=staff(g.Code,t);if(n<(g.Minimum||2)){ko++;al.push([iso(t),g,n])}}});
+ cycGroups().forEach(g=>{for(let t=t0;t<=t1;t+=DAY)if(worked(g.Code,t)&&staffed(g.Code,t)){const n=staff(g.Code,t);if(n<(g.Minimum||2)){ko++;al.push([iso(t),g,n])}}});
  for(const k in D.S){const s=D.S[k];if(s.d>=iso(t0)&&s.d<=iso(t1)&&s.Code&&D.C[s.Code]&&D.C[s.Code].Presence!=='Présent'&&!(s.Code==='HS'&&s.Sens==='Acquis')&&!s.Confirme)pend++}
  return{ko,pend,al}}
 
@@ -301,7 +302,7 @@ function cell(a,gc,t,sup){const d=iso(t),w=dow(t),s=D.S[a.id+'|'+d];const inAff=
 function block(g,days,sup){let h=`<tr class="gh"><th colspan="${days.length+1}">${esc(g.Nom||g.Code)}<span>${g.Type==='Hebdo'?'hebdomadaire':'prise de service '+esc(g.Prise_service||'')}</span></th></tr>`;
  const rows=rowsFor(g.Code,days);if(!rows.length)h+=`<tr><th class="nm" style="color:var(--mut);font-weight:400">aucun agent</th>${days.map(()=>'<td></td>').join('')}</tr>`;
  rows.forEach(a=>{h+=`<tr class="${a.Statut==='Réserviste'?'res':''}"><th class="nm" title="${esc(a.Nom||'')}">${a.Statut==='Réserviste'?'Réserviste':esc(a.Trigramme)}</th>${days.map(t=>cell(a,g.Code,t,sup)).join('')}</tr>`});
- if(g.Type!=='Hebdo')h+=`<tr class="cnt"><th class="nm">Présents</th>${days.map(t=>{if(!worked(g.Code,t))return '<td></td>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<td class="${n<mi?'ko':n===mi?'lim':'ok'}">${n}</td>`}).join('')}</tr>`;return h}
+ if(g.Type!=='Hebdo')h+=`<tr class="cnt"><th class="nm">Présents</th>${days.map(t=>{if(!worked(g.Code,t)||!staffed(g.Code,t))return '<td></td>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<td class="${n<mi?'ko':n===mi?'lim':'ok'}">${n}</td>`}).join('')}</tr>`;return h}
 const grid=(gs,m,sup)=>`<div class="scroll"><table class="g">${head(m.days,m.full)}<tbody>${gs.map(g=>block(g,m.days,sup)).join('')}</tbody></table></div>`;
 
 /* ---------- Mon compteur ---------- */
@@ -390,7 +391,7 @@ function render(){
  else if(tab==='an'){const all=[];ms.forEach(x=>all.push(...x.days));
   V.innerHTML=`<h2 style="margin:4px 0;font-size:18px">${s.ko?s.ko+' vacation(s) sous le minimum sur la campagne':'Effectif minimum tenu sur toute la campagne'}</h2><p class="note" style="margin:0 0 10px">Une case par jour. Cliquez un mois pour l'ouvrir dans la vue superviseur.</p>
   <div class="year"><span></span><div class="mlab" style="grid-template-columns:repeat(${all.length},minmax(0,1fr))">${ms.map((x,i)=>`<button data-jm="${i}" style="grid-column:span ${x.days.length}">${esc(x.lab)}</button>`).join('')}</div>
-  ${cycGroups().map(g=>`<b>${esc(g.Nom)}</b><div class="strip">${all.map(t=>{if(!worked(g.Code,t))return '<i class="f"></i>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<i class="${n<mi?'k':n===mi?'l':'w'}" title="${fmtD(iso(t))} : ${n}"></i>`}).join('')}</div>`).join('')}</div>`}
+  ${cycGroups().map(g=>`<b>${esc(g.Nom)}</b><div class="strip">${all.map(t=>{if(!worked(g.Code,t)||!staffed(g.Code,t))return '<i class="f"></i>';const n=staff(g.Code,t),mi=g.Minimum||2;return `<i class="${n<mi?'k':n===mi?'l':'w'}" title="${fmtD(iso(t))} : ${n}"></i>`}).join('')}</div>`).join('')}</div>`}
  else if(tab==='cpt'){V.innerHTML=cptView();bindCpt()}
  else{V.innerHTML=admView();bindAdm()}
 }
